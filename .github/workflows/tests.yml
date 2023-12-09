@@ -1,0 +1,35 @@
+name: Tests
+
+on: [push]
+
+# TODO: Add Windows job after Swift is added to the Windows images [1] or after
+# `swift-actions/setup-swift` supports Swift 5.9+ on Windows [2].
+# 1. https://github.com/actions/runner-images/issues/8281
+# 2. https://github.com/swift-actions/setup-swift/pull/470#issuecomment-1718406382
+jobs:
+  test-macos:
+    name: Run Tests on macOS
+    # TODO: Use `macos-latest` after the macOS 13 image graduates to GA.
+    # https://github.com/actions/runner-images/issues/7508#issuecomment-1718206371
+    runs-on: macos-13
+
+    steps:
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Print Swift compiler version
+        run: "swift --version"
+      - uses: actions/checkout@v3
+      - name: Run tests
+        run: "swift test --parallel"
+
+  test-linux:
+    name: Run Tests on Linux
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print Swift compiler version
+        run: "swift --version"
+      - uses: actions/checkout@v3
+      - name: Run tests
+        run: "swift test --parallel"
