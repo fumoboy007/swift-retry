@@ -14,7 +14,10 @@ let package = Package(
    ],
    products: [
       .library(
-         name: "Retry",
+         // TODO: Remove `DM` prefix after FB13180164 is resolved. The Xcode build system fails to build
+         // a package graph that has duplicate product names. Other retry packages may also name their
+         // library `Retry`, so we add a prefix to distinguish this package’s library.
+         name: "DMRetry",
          targets: [
             "Retry",
          ]
