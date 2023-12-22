@@ -20,28 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-@testable import Retry
-
-class RandomNumberGeneratorFake: RandomNumberGenerator {
-   enum Mode {
-      case min
-      case max
-   }
-   var mode: Mode
-
-   init(mode: Mode) {
-      self.mode = mode
-   }
-
+/// A protocol that allows one to specify a different implementation from the standard one (e.g. for automated tests).
+///
+/// - Remark: Cannot use the Swift standard library’s `RandomNumberGenerator` protocol for this purpose as detailed here:
+///    https://github.com/apple/swift/issues/70557
+protocol RandomNumberGenerator {
    func random<T>(
       in range: ClosedRange<T>
-   ) -> T where T : BinaryFloatingPoint, T.RawSignificand : FixedWidthInteger {
-      switch mode {
-      case .min:
-         return range.lowerBound
-
-      case .max:
-         return range.upperBound
-      }
-   }
+   ) -> T where T: BinaryFloatingPoint, T.RawSignificand: FixedWidthInteger
 }

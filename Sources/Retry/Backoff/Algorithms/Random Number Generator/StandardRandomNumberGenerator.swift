@@ -20,28 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-@testable import Retry
-
-class RandomNumberGeneratorFake: RandomNumberGenerator {
-   enum Mode {
-      case min
-      case max
-   }
-   var mode: Mode
-
-   init(mode: Mode) {
-      self.mode = mode
-   }
-
+struct StandardRandomNumberGenerator: RandomNumberGenerator {
    func random<T>(
       in range: ClosedRange<T>
-   ) -> T where T : BinaryFloatingPoint, T.RawSignificand : FixedWidthInteger {
-      switch mode {
-      case .min:
-         return range.lowerBound
-
-      case .max:
-         return range.upperBound
-      }
+   ) -> T where T: BinaryFloatingPoint, T.RawSignificand: FixedWidthInteger {
+      return T.random(in: range)
    }
 }

@@ -79,8 +79,7 @@ where ClockType: Clock, RandomNumberGeneratorType: RandomNumberGenerator {
       let maxDelayInClockTicks = min(baseDelayInClockTicks * Double(1 << exponent),
                                      maxDelayInClockTicks)
 
-      let delayInClockTicks = Double.random(in: 0...maxDelayInClockTicks,
-                                            using: &randomNumberGenerator)
+      let delayInClockTicks = randomNumberGenerator.random(in: 0...maxDelayInClockTicks)
 
       // Unfortunately, `DurationProtocol` does not have a `Duration * Double` operator, so we need to cast to `Int`.
       // We make sure to cast to `Int` at the end rather than at the beginning so that the imprecision is bounded.
@@ -88,13 +87,13 @@ where ClockType: Clock, RandomNumberGeneratorType: RandomNumberGenerator {
    }
 }
 
-extension FullJitterExponentialBackoff where RandomNumberGeneratorType == SystemRandomNumberGenerator {
+extension FullJitterExponentialBackoff where RandomNumberGeneratorType == StandardRandomNumberGenerator {
    init(clock: ClockType,
         baseDelay: ClockType.Duration,
         maxDelay: ClockType.Duration?) {
       self.init(clock: clock,
                 baseDelay: baseDelay,
                 maxDelay: maxDelay,
-                randomNumberGenerator: SystemRandomNumberGenerator())
+                randomNumberGenerator: StandardRandomNumberGenerator())
    }
 }
