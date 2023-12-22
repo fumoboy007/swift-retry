@@ -54,10 +54,53 @@ public struct RetryConfiguration<ClockType: Clock> {
    /// - Note: The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    public var shouldRetry: @Sendable (any Error) -> Bool
 
-   public init(maxAttempts: Int?,
-               clock: ClockType,
-               backoff: Backoff<ClockType>,
-               shouldRetry: @escaping @Sendable (any Error) -> Bool) {
+#if canImport(OSLog)
+   /// Configures the retry behavior when the clock type is `ContinuousClock`.
+   ///
+   /// - Parameters:
+   ///    - maxAttempts: The maximum number of times to attempt the operation. Must be greater than `0`.
+   ///    - backoff: The choice of algorithm that will be used to determine how long to sleep in between attempts.
+   ///    - appleLogger: The logger that will be used to log a message when an attempt fails. The function will
+   ///       log messages using the `debug` log level.
+   ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
+   ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
+   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
+   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   public init(
+      maxAttempts: Int? = 3,
+      backoff: Backoff<ContinuousClock> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
+      appleLogger: os.Logger? = nil,
+      logger: Logging.Logger? = nil,
+      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   ) where ClockType == ContinuousClock {
+      self.init(maxAttempts: maxAttempts,
+                clock: ContinuousClock(),
+                backoff: backoff,
+                appleLogger: appleLogger,
+                logger: logger,
+                shouldRetry: shouldRetry)
+   }
+
+   /// Configures the retry behavior when the clock’s duration type is the standard `Duration` type.
+   ///
+   /// - Parameters:
+   ///    - maxAttempts: The maximum number of times to attempt the operation. Must be greater than `0`.
+   ///    - clock: The clock that will be used to sleep in between attempts.
+   ///    - backoff: The choice of algorithm that will be used to determine how long to sleep in between attempts.
+   ///    - appleLogger: The logger that will be used to log a message when an attempt fails. The function will
+   ///       log messages using the `debug` log level.
+   ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
+   ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
+   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
+   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   public init(
+      maxAttempts: Int? = 3,
+      clock: ClockType,
+      backoff: Backoff<ClockType> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
+      appleLogger: os.Logger? = nil,
+      logger: Logging.Logger? = nil,
+      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   ) where ClockType.Duration == Duration {
       if let maxAttempts {
          precondition(maxAttempts > 0)
       }
@@ -67,8 +110,131 @@ public struct RetryConfiguration<ClockType: Clock> {
       self.clock = clock
       self.backoff = backoff
 
+      self.appleLogger = appleLogger
+      self.logger = logger
+
       self.shouldRetry = shouldRetry
    }
+
+   /// Configures the retry behavior.
+   ///
+   /// - Parameters:
+   ///    - maxAttempts: The maximum number of times to attempt the operation. Must be greater than `0`.
+   ///    - clock: The clock that will be used to sleep in between attempts.
+   ///    - backoff: The choice of algorithm that will be used to determine how long to sleep in between attempts.
+   ///    - appleLogger: The logger that will be used to log a message when an attempt fails. The function will
+   ///       log messages using the `debug` log level.
+   ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
+   ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
+   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
+   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   public init(
+      maxAttempts: Int? = 3,
+      clock: ClockType,
+      backoff: Backoff<ClockType>,
+      appleLogger: os.Logger? = nil,
+      logger: Logging.Logger? = nil,
+      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   ) {
+      if let maxAttempts {
+         precondition(maxAttempts > 0)
+      }
+
+      self.maxAttempts = maxAttempts
+
+      self.clock = clock
+      self.backoff = backoff
+
+      self.appleLogger = appleLogger
+      self.logger = logger
+
+      self.shouldRetry = shouldRetry
+   }
+#else
+   /// Configures the retry behavior when the clock type is `ContinuousClock`.
+   ///
+   /// - Parameters:
+   ///    - maxAttempts: The maximum number of times to attempt the operation. Must be greater than `0`.
+   ///    - backoff: The choice of algorithm that will be used to determine how long to sleep in between attempts.
+   ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
+   ///       messages using the `debug` log level.
+   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
+   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   public init(
+      maxAttempts: Int? = 3,
+      backoff: Backoff<ContinuousClock> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
+      logger: Logging.Logger? = nil,
+      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   ) where ClockType == ContinuousClock {
+      self.init(maxAttempts: maxAttempts,
+                clock: ContinuousClock(),
+                backoff: backoff,
+                logger: logger,
+                shouldRetry: shouldRetry)
+   }
+
+   /// Configures the retry behavior when the clock’s duration type is the standard `Duration` type.
+   ///
+   /// - Parameters:
+   ///    - maxAttempts: The maximum number of times to attempt the operation. Must be greater than `0`.
+   ///    - clock: The clock that will be used to sleep in between attempts.
+   ///    - backoff: The choice of algorithm that will be used to determine how long to sleep in between attempts.
+   ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
+   ///       messages using the `debug` log level.
+   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
+   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   public init(
+      maxAttempts: Int? = 3,
+      clock: ClockType,
+      backoff: Backoff<ClockType> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
+      logger: Logging.Logger? = nil,
+      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   ) where ClockType.Duration == Duration {
+      if let maxAttempts {
+         precondition(maxAttempts > 0)
+      }
+
+      self.maxAttempts = maxAttempts
+
+      self.clock = clock
+      self.backoff = backoff
+
+      self.logger = logger
+
+      self.shouldRetry = shouldRetry
+   }
+
+   /// Configures the retry behavior.
+   ///
+   /// - Parameters:
+   ///    - maxAttempts: The maximum number of times to attempt the operation. Must be greater than `0`.
+   ///    - clock: The clock that will be used to sleep in between attempts.
+   ///    - backoff: The choice of algorithm that will be used to determine how long to sleep in between attempts.
+   ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
+   ///       messages using the `debug` log level.
+   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
+   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   public init(
+      maxAttempts: Int? = 3,
+      clock: ClockType,
+      backoff: Backoff<ClockType>,
+      logger: Logging.Logger? = nil,
+      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   ) {
+      if let maxAttempts {
+         precondition(maxAttempts > 0)
+      }
+
+      self.maxAttempts = maxAttempts
+
+      self.clock = clock
+      self.backoff = backoff
+
+      self.logger = logger
+
+      self.shouldRetry = shouldRetry
+   }
+#endif
 
    public func withMaxAttempts(_ newValue: Int?) -> Self {
       var newConfiguration = self
@@ -110,28 +276,4 @@ public struct RetryConfiguration<ClockType: Clock> {
 }
 
 extension RetryConfiguration: Sendable {
-}
-
-extension RetryConfiguration {
-   public init(
-      maxAttempts: Int?,
-      backoff: Backoff<ClockType>,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool
-   ) where ClockType == ContinuousClock {
-      self.init(maxAttempts: maxAttempts,
-                clock: ContinuousClock(),
-                backoff: backoff,
-                shouldRetry: shouldRetry)
-   }
-
-   public init(
-      maxAttempts: Int?,
-      backoff: Backoff<ClockType>,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool
-   ) where ClockType == SuspendingClock {
-      self.init(maxAttempts: maxAttempts,
-                clock: SuspendingClock(),
-                backoff: backoff,
-                shouldRetry: shouldRetry)
-   }
 }

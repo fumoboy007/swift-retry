@@ -93,12 +93,12 @@ public func retry<ClockType, ReturnType>(
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType,
    shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
 ) async throws -> ReturnType where ClockType.Duration == Duration {
-   var configuration = RetryConfiguration(maxAttempts: maxAttempts,
+   let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                           clock: clock,
                                           backoff: backoff,
+                                          appleLogger: appleLogger,
+                                          logger: logger,
                                           shouldRetry: shouldRetry)
-   configuration.appleLogger = appleLogger
-   configuration.logger = logger
 
    return try await retry(with: configuration,
                           operation: operation)
@@ -134,12 +134,12 @@ public func retry<ClockType, ReturnType>(
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType,
    shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
 ) async throws -> ReturnType {
-   var configuration = RetryConfiguration(maxAttempts: maxAttempts,
+   let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                           clock: clock,
                                           backoff: backoff,
+                                          appleLogger: appleLogger,
+                                          logger: logger,
                                           shouldRetry: shouldRetry)
-   configuration.appleLogger = appleLogger
-   configuration.logger = logger
 
    return try await retry(with: configuration,
                           operation: operation)
@@ -205,11 +205,11 @@ public func retry<ClockType, ReturnType>(
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType,
    shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
 ) async throws -> ReturnType where ClockType.Duration == Duration {
-   var configuration = RetryConfiguration(maxAttempts: maxAttempts,
+   let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                           clock: clock,
                                           backoff: backoff,
+                                          logger: logger,
                                           shouldRetry: shouldRetry)
-   configuration.logger = logger
 
    return try await retry(with: configuration,
                           operation: operation)
@@ -242,11 +242,11 @@ public func retry<ClockType, ReturnType>(
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType,
    shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
 ) async throws -> ReturnType {
-   var configuration = RetryConfiguration(maxAttempts: maxAttempts,
+   let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                           clock: clock,
                                           backoff: backoff,
+                                          logger: logger,
                                           shouldRetry: shouldRetry)
-   configuration.logger = logger
 
    return try await retry(with: configuration,
                           operation: operation)

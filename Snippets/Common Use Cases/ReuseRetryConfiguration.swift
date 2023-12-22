@@ -8,11 +8,13 @@ import Retry
 // snippet.show
 
 extension RetryConfiguration<ContinuousClock> {
-   static let highTolerance = RetryConfiguration(
-      maxAttempts: 10,
-      backoff: .default(baseDelay: .seconds(1),
-                        maxDelay: nil),
-      shouldRetry: { _ in true }
+   static let standard = RetryConfiguration(shouldRetry: { $0.isRetryable })
+
+   static let highTolerance = (
+      Self.standard
+         .withMaxAttempts(10)
+         .withBackoff(.default(baseDelay: .seconds(1),
+                               maxDelay: nil))
    )
 }
 
@@ -21,6 +23,12 @@ try await retry(with: .highTolerance.withLogger(myLogger)) {
 }
 
 // snippet.hide
+
+extension Error {
+   var isRetryable: Bool {
+      return true
+   }
+}
 
 let myLogger = Logger(label: "Example Code")
 
