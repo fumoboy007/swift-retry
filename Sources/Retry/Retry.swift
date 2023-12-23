@@ -285,7 +285,7 @@ public func retry<ClockType, ReturnType>(
    var attempt = 0
    while true {
       var latestError: any Error
-      let isErrorRetryable: Bool
+      var isErrorRetryable: Bool
 
       do {
          return try await operation()
@@ -305,6 +305,10 @@ public func retry<ClockType, ReturnType>(
          }
 
          latestError = latestError.originalError
+
+         if latestError is CancellationError {
+            isErrorRetryable = false
+         }
       }
 
       logger?[metadataKey: "retry.attempt"] = "\(attempt)"

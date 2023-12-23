@@ -29,25 +29,54 @@ class ClockFake: Clock, @unchecked Sendable {
 
    private let lock = NSLock()
 
-   private var _now: Instant
-
-   private var _allSleepDurations = [Duration]()
-
    init() {
       self._now = realClock.now
    }
 
-   var now: Instant {
-      lock.lock()
-      defer {
-         lock.unlock()
+   private var _now: Instant
+   private(set) var now: Instant {
+      get {
+         lock.lock()
+         defer {
+            lock.unlock()
+         }
+
+         return _now
       }
 
-      return _now
+      set {
+         lock.lock()
+         defer {
+            lock.unlock()
+         }
+
+         _now = max(newValue, _now)
+      }
    }
 
    var minimumResolution: Duration {
       return realClock.minimumResolution
+   }
+
+   private var _isSleepEnabled = false
+   var isSleepEnabled: Bool {
+      get {
+         lock.lock()
+         defer {
+            lock.unlock()
+         }
+
+         return _isSleepEnabled
+      }
+
+      set {
+         lock.lock()
+         defer {
+            lock.unlock()
+         }
+
+         _isSleepEnabled = newValue
+      }
    }
 
    func sleep(until deadline: Instant,
@@ -55,21 +84,17 @@ class ClockFake: Clock, @unchecked Sendable {
       // Refactored into a non-async method so that `NSLock.lock` and `NSLock.unlock` can be used.
       // Cannot use the async-safe `NSLock.withLocking` method until the following change is released:
       // https://github.com/apple/swift-corelibs-foundation/pull/4736
-      sleep(until: deadline)
-   }
+      recordSleepDuration(deadline: deadline)
 
-   private func sleep(until deadline: Instant) {
-      lock.lock()
-      defer {
-         lock.unlock()
+      if isSleepEnabled {
+         try await realClock.sleep(until: deadline,
+                                   tolerance: tolerance)
       }
 
-      let duration = deadline - _now
-      _allSleepDurations.append(duration)
-
-      _now = max(deadline, _now)
+      now = deadline
    }
 
+   private var _allSleepDurations = [Duration]()
    var allSleepDurations: [Duration] {
       lock.lock()
       defer {
@@ -77,5 +102,15 @@ class ClockFake: Clock, @unchecked Sendable {
       }
 
       return _allSleepDurations
+   }
+
+   private func recordSleepDuration(deadline: Instant) {
+      lock.lock()
+      defer {
+         lock.unlock()
+      }
+
+      let duration = deadline - _now
+      _allSleepDurations.append(duration)
    }
 }

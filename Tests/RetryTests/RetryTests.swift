@@ -78,7 +78,7 @@ final class RetryTests: XCTestCase {
    }
 
    func testAllAttemptsFail_failureAfterRetries() async throws {
-      try await assertThrowsErrorFake {
+      try await assertThrows(ErrorFake.self) {
          try await retry(with: testingConfiguration) {
             throw ErrorFake()
          }
@@ -90,7 +90,7 @@ final class RetryTests: XCTestCase {
    func testFailure_shouldRetryReturnsFalse_failureWithoutRetry() async throws {
       precondition(Self.maxAttempts > 1)
 
-      try await assertThrowsErrorFake {
+      try await assertThrows(ErrorFake.self) {
          try await retry(with: testingConfiguration.withShouldRetry({ _ in false })) {
             throw ErrorFake()
          }
@@ -102,7 +102,7 @@ final class RetryTests: XCTestCase {
    func testFailure_isNotRetryableError_failureWithoutRetry() async throws {
       precondition(Self.maxAttempts > 1)
 
-      try await assertThrowsErrorFake {
+      try await assertThrows(ErrorFake.self) {
          try await retry(with: testingConfiguration) {
             throw NotRetryable(ErrorFake())
          }
@@ -130,7 +130,7 @@ final class RetryTests: XCTestCase {
    }
 
    func testAllAttemptsFail_latestErrorIsRetryableError_throwsOriginalError() async throws {
-      try await assertThrowsErrorFake {
+      try await assertThrows(ErrorFake.self) {
          try await retry(with: testingConfiguration) {
             throw Retryable(NotRetryable(ErrorFake()))
          }
@@ -139,8 +139,8 @@ final class RetryTests: XCTestCase {
       assertRetried(times: Self.maxAttempts - 1)
    }
 
-   func testFailure_errorIsNotRetryableError_throwsOriginalError() async throws {
-      try await assertThrowsErrorFake {
+   func testFailure_isNotRetryableError_throwsOriginalError() async throws {
+      try await assertThrows(ErrorFake.self) {
          try await retry(with: testingConfiguration) {
             throw NotRetryable(Retryable(ErrorFake()))
          }
@@ -149,12 +149,82 @@ final class RetryTests: XCTestCase {
       assertRetried(times: 0)
    }
 
+   func testFailure_isCancellationError_failureWithoutRetry() async throws {
+      precondition(Self.maxAttempts > 1)
+
+      try await assertThrows(CancellationError.self) {
+         try await retry(with: testingConfiguration) {
+            throw CancellationError()
+         }
+      }
+
+      assertRetried(times: 0)
+   }
+
+   func testFailure_isCancellationErrorWrappedInRetryableError_failureWithoutRetry() async throws {
+      precondition(Self.maxAttempts > 1)
+
+      try await assertThrows(CancellationError.self) {
+         try await retry(with: testingConfiguration) {
+            throw Retryable(CancellationError())
+         }
+      }
+
+      assertRetried(times: 0)
+   }
+
+   func testFailure_isCancellationErrorWrappedInNotRetryableError_failureWithoutRetry() async throws {
+      precondition(Self.maxAttempts > 1)
+
+      try await assertThrows(CancellationError.self) {
+         try await retry(with: testingConfiguration) {
+            throw NotRetryable(CancellationError())
+         }
+      }
+
+      assertRetried(times: 0)
+   }
+
+   func testCancelledDuringSleep_immediateFailure() async throws {
+      precondition(Self.maxAttempts > 1)
+
+      clockFake.isSleepEnabled = true
+      let configuration = testingConfiguration.withBackoff(.constant(.seconds(60)))
+
+      let retryTask = Task {
+         try await retry(with: configuration) {
+            throw ErrorFake()
+         }
+      }
+
+      // Wait until the retry task is sleeping after the first attempt.
+      while clockFake.allSleepDurations.isEmpty {
+         try await Task.sleep(for: .milliseconds(1))
+      }
+
+      retryTask.cancel()
+
+      let realClock = ContinuousClock()
+      let start = realClock.now
+
+      try await assertThrows(CancellationError.self) {
+         try await retryTask.value
+      }
+
+      let end = realClock.now
+      let duration = end - start
+      XCTAssertLessThan(duration, .seconds(1))
+   }
+
    // MARK: - Assertions
 
-   private func assertThrowsErrorFake(operation: () async throws -> Void) async throws {
+   private func assertThrows<T: Error>(
+      _ errorType: T.Type,
+      operation: () async throws -> Void
+   ) async throws {
       do {
          try await operation()
-      } catch is ErrorFake {
+      } catch is T {
          // Expected.
       }
    }
