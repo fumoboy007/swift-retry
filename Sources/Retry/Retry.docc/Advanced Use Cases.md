@@ -7,3 +7,7 @@
 ## Implementing a Custom Backoff Algorithm
 
 @Snippet(path: "swift-retry/Snippets/Advanced Use Cases/CustomBackoffAlgorithm")
+
+## Adding Safe Retry Methods to a Request Type
+
+@Snippet(path: "swift-retry/Snippets/Advanced Use Cases/RetryableRequest")

@@ -46,3 +46,7 @@ The API provides several customization points to accommodate any use case:
 
 - ``Retryable``
 - ``NotRetryable``
+
+### Safely Retrying Requests
+
+- ``RetryableRequest``

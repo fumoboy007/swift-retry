@@ -46,6 +46,7 @@ import OSLog
 ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
+/// - SeeAlso: ``RetryableRequest``
 public func retry<ReturnType>(
    maxAttempts: Int? = 3,
    backoff: Backoff<ContinuousClock> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
@@ -84,6 +85,7 @@ public func retry<ReturnType>(
 ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
+/// - SeeAlso: ``RetryableRequest``
 public func retry<ClockType, ReturnType>(
    maxAttempts: Int? = 3,
    clock: ClockType,
@@ -125,6 +127,7 @@ public func retry<ClockType, ReturnType>(
 ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
+/// - SeeAlso: ``RetryableRequest``
 public func retry<ClockType, ReturnType>(
    maxAttempts: Int? = 3,
    clock: ClockType,
@@ -163,6 +166,7 @@ public func retry<ClockType, ReturnType>(
 ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
+/// - SeeAlso: ``RetryableRequest``
 public func retry<ReturnType>(
    maxAttempts: Int? = 3,
    backoff: Backoff<ContinuousClock> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
@@ -197,6 +201,7 @@ public func retry<ReturnType>(
 ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
+/// - SeeAlso: ``RetryableRequest``
 public func retry<ClockType, ReturnType>(
    maxAttempts: Int? = 3,
    clock: ClockType,
@@ -234,6 +239,7 @@ public func retry<ClockType, ReturnType>(
 ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
+/// - SeeAlso: ``RetryableRequest``
 public func retry<ClockType, ReturnType>(
    maxAttempts: Int? = 3,
    clock: ClockType,
@@ -266,6 +272,8 @@ public func retry<ClockType, ReturnType>(
 ///
 /// - Note: The function will log messages using the `debug` log level to ``RetryConfiguration/logger``
 ///    (and/or ``RetryConfiguration/appleLogger`` on Apple platforms).
+///
+/// - SeeAlso: ``RetryableRequest`` 
 public func retry<ClockType, ReturnType>(
    with configuration: RetryConfiguration<ClockType>,
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType
