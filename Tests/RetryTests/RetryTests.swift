@@ -99,11 +99,16 @@ final class RetryTests: XCTestCase {
       assertRetried(times: 0)
    }
 
-   func testFailure_isNotRetryableError_failureWithoutRetry() async throws {
+   func testFailure_isNotRetryableError_shouldRetryNotCalled_failureWithoutRetry() async throws {
       precondition(Self.maxAttempts > 1)
 
+      let configuration = testingConfiguration.withShouldRetry { error in
+         XCTFail("`shouldRetry` should not be called when the error is `NotRetryable`.")
+         return true
+      }
+
       try await assertThrows(ErrorFake.self) {
-         try await retry(with: testingConfiguration) {
+         try await retry(with: configuration) {
             throw NotRetryable(ErrorFake())
          }
       }
@@ -111,12 +116,17 @@ final class RetryTests: XCTestCase {
       assertRetried(times: 0)
    }
 
-   func testOneFailure_isRetryableError_successAfterRetry() async throws {
+   func testOneFailure_isRetryableError_shouldRetryNotCalled_successAfterRetry() async throws {
       precondition(Self.maxAttempts > 1)
+
+      let configuration = testingConfiguration.withShouldRetry { error in
+         XCTFail("`shouldRetry` should not be called when the error is `Retryable`.")
+         return false
+      }
 
       var isFirstAttempt = true
 
-      try await retry(with: testingConfiguration.withShouldRetry({ _ in false })) {
+      try await retry(with: configuration) {
          if isFirstAttempt {
             isFirstAttempt = false
 
@@ -149,11 +159,16 @@ final class RetryTests: XCTestCase {
       assertRetried(times: 0)
    }
 
-   func testFailure_isCancellationError_failureWithoutRetry() async throws {
+   func testFailure_isCancellationError_shouldRetryNotCalled_failureWithoutRetry() async throws {
       precondition(Self.maxAttempts > 1)
 
+      let configuration = testingConfiguration.withShouldRetry { error in
+         XCTFail("`shouldRetry` should not be called when the error is `CancellationError`.")
+         return true
+      }
+
       try await assertThrows(CancellationError.self) {
-         try await retry(with: testingConfiguration) {
+         try await retry(with: configuration) {
             throw CancellationError()
          }
       }

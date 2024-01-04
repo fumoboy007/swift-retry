@@ -307,6 +307,10 @@ public func retry<ClockType, ReturnType>(
             latestError = error
             isErrorRetryable = false
 
+         case let error as CancellationError:
+            latestError = error
+            isErrorRetryable = false
+
          default:
             latestError = error
             isErrorRetryable = shouldRetry(error)
@@ -314,6 +318,7 @@ public func retry<ClockType, ReturnType>(
 
          latestError = latestError.originalError
 
+         // Need to check again because the error could have been wrapped.
          if latestError is CancellationError {
             isErrorRetryable = false
          }
@@ -325,7 +330,7 @@ public func retry<ClockType, ReturnType>(
       // public and private data.
       logger?[metadataKey: "retry.error.type"] = "\(type(of: latestError))"
 
-      if !isErrorRetryable {
+      guard isErrorRetryable else {
          logger?.debug("Attempt failed. Error is not retryable.")
 #if canImport(OSLog)
          appleLogger?.debug("""
