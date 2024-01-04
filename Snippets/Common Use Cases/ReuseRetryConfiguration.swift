@@ -8,7 +8,9 @@ import Retry
 // snippet.show
 
 extension RetryConfiguration<ContinuousClock> {
-   static let standard = RetryConfiguration(shouldRetry: { $0.isRetryable })
+   static let standard = RetryConfiguration(
+      recoverFromFailure: { $0.isRetryable ? .retry : .throw }
+   )
 
    static let highTolerance = (
       Self.standard

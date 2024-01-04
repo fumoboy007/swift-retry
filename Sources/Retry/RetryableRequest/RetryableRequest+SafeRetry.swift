@@ -32,7 +32,7 @@ extension RetryableRequest {
    ///
    /// Failures may not be retryable for the following reasons:
    /// - The response indicates that the failure is not transient.
-   /// - `shouldRetry` returns `false`.
+   /// - `recoverFromFailure` returns ``RecoveryAction/throw``.
    /// - The thrown error is ``NotRetryable``.
    /// - The number of attempts reached `maxAttempts`.
    ///
@@ -46,8 +46,8 @@ extension RetryableRequest {
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
    ///    - operation: Attempts the given request.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    ///
    /// - SeeAlso: ``retry(with:operation:)``
    public func retry<ReturnType>(
@@ -56,7 +56,7 @@ extension RetryableRequest {
       appleLogger: os.Logger? = nil,
       logger: Logging.Logger? = nil,
       @_inheritActorContext @_implicitSelfCapture operation: (Self) async throws -> ReturnType,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ContinuousClock> = { _ in .retry }
    ) async throws -> ReturnType {
       return try await retry(maxAttempts: maxAttempts,
                              clock: ContinuousClock(),
@@ -64,7 +64,7 @@ extension RetryableRequest {
                              appleLogger: appleLogger,
                              logger: logger,
                              operation: operation,
-                             shouldRetry: shouldRetry)
+                             recoverFromFailure: recoverFromFailure)
    }
 
    /// Attempts the given operation until it succeeds or until the failure is no longer retryable.
@@ -72,7 +72,7 @@ extension RetryableRequest {
    ///
    /// Failures may not be retryable for the following reasons:
    /// - The response indicates that the failure is not transient.
-   /// - `shouldRetry` returns `false`.
+   /// - `recoverFromFailure` returns ``RecoveryAction/throw``.
    /// - The thrown error is ``NotRetryable``.
    /// - The number of attempts reached `maxAttempts`.
    ///
@@ -87,8 +87,8 @@ extension RetryableRequest {
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
    ///    - operation: Attempts the given request.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    ///
    /// - SeeAlso: ``retry(with:operation:)``
    public func retry<ClockType, ReturnType>(
@@ -98,14 +98,14 @@ extension RetryableRequest {
       appleLogger: os.Logger? = nil,
       logger: Logging.Logger? = nil,
       @_inheritActorContext @_implicitSelfCapture operation: (Self) async throws -> ReturnType,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
    ) async throws -> ReturnType where ClockType.Duration == Duration {
       let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                              clock: clock,
                                              backoff: backoff,
                                              appleLogger: appleLogger,
                                              logger: logger,
-                                             shouldRetry: shouldRetry)
+                                             recoverFromFailure: recoverFromFailure)
 
       return try await retry(with: configuration,
                              operation: operation)
@@ -116,7 +116,7 @@ extension RetryableRequest {
    ///
    /// Failures may not be retryable for the following reasons:
    /// - The response indicates that the failure is not transient.
-   /// - `shouldRetry` returns `false`.
+   /// - `recoverFromFailure` returns ``RecoveryAction/throw``.
    /// - The thrown error is ``NotRetryable``.
    /// - The number of attempts reached `maxAttempts`.
    ///
@@ -131,8 +131,8 @@ extension RetryableRequest {
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
    ///    - operation: Attempts the given request.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    ///
    /// - SeeAlso: ``retry(with:operation:)``
    public func retry<ClockType, ReturnType>(
@@ -142,14 +142,14 @@ extension RetryableRequest {
       appleLogger: os.Logger? = nil,
       logger: Logging.Logger? = nil,
       @_inheritActorContext @_implicitSelfCapture operation: (Self) async throws -> ReturnType,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
    ) async throws -> ReturnType {
       let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                              clock: clock,
                                              backoff: backoff,
                                              appleLogger: appleLogger,
                                              logger: logger,
-                                             shouldRetry: shouldRetry)
+                                             recoverFromFailure: recoverFromFailure)
 
       return try await retry(with: configuration,
                              operation: operation)
@@ -160,7 +160,7 @@ extension RetryableRequest {
    ///
    /// Failures may not be retryable for the following reasons:
    /// - The response indicates that the failure is not transient.
-   /// - `shouldRetry` returns `false`.
+   /// - `recoverFromFailure` returns ``RecoveryAction/throw``.
    /// - The thrown error is ``NotRetryable``.
    /// - The number of attempts reached `maxAttempts`.
    ///
@@ -172,8 +172,8 @@ extension RetryableRequest {
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level.
    ///    - operation: Attempts the given request.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    ///
    /// - SeeAlso: ``retry(with:operation:)``
    public func retry<ReturnType>(
@@ -181,14 +181,14 @@ extension RetryableRequest {
       backoff: Backoff<ContinuousClock> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
       logger: Logging.Logger? = nil,
       @_inheritActorContext @_implicitSelfCapture operation: (Self) async throws -> ReturnType,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ContinuousClock> = { _ in .retry }
    ) async throws -> ReturnType {
       return try await retry(maxAttempts: maxAttempts,
                              clock: ContinuousClock(),
                              backoff: backoff,
                              logger: logger,
                              operation: operation,
-                             shouldRetry: shouldRetry)
+                             recoverFromFailure: recoverFromFailure)
    }
 
    /// Attempts the given operation until it succeeds or until the failure is no longer retryable.
@@ -196,7 +196,7 @@ extension RetryableRequest {
    ///
    /// Failures may not be retryable for the following reasons:
    /// - The response indicates that the failure is not transient.
-   /// - `shouldRetry` returns `false`.
+   /// - `recoverFromFailure` returns ``RecoveryAction/throw``.
    /// - The thrown error is ``NotRetryable``.
    /// - The number of attempts reached `maxAttempts`.
    ///
@@ -209,8 +209,8 @@ extension RetryableRequest {
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level.
    ///    - operation: Attempts the given request.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    ///
    /// - SeeAlso: ``retry(with:operation:)``
    public func retry<ClockType, ReturnType>(
@@ -219,13 +219,13 @@ extension RetryableRequest {
       backoff: Backoff<ClockType> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
       logger: Logging.Logger? = nil,
       @_inheritActorContext @_implicitSelfCapture operation: (Self) async throws -> ReturnType,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
    ) async throws -> ReturnType where ClockType.Duration == Duration {
       let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                              clock: clock,
                                              backoff: backoff,
                                              logger: logger,
-                                             shouldRetry: shouldRetry)
+                                             recoverFromFailure: recoverFromFailure)
 
       return try await retry(with: configuration,
                              operation: operation)
@@ -236,7 +236,7 @@ extension RetryableRequest {
    ///
    /// Failures may not be retryable for the following reasons:
    /// - The response indicates that the failure is not transient.
-   /// - `shouldRetry` returns `false`.
+   /// - `recoverFromFailure` returns ``RecoveryAction/throw``.
    /// - The thrown error is ``NotRetryable``.
    /// - The number of attempts reached `maxAttempts`.
    ///
@@ -249,8 +249,8 @@ extension RetryableRequest {
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level.
    ///    - operation: Attempts the given request.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    ///
    /// - SeeAlso: ``retry(with:operation:)``
    public func retry<ClockType, ReturnType>(
@@ -259,13 +259,13 @@ extension RetryableRequest {
       backoff: Backoff<ClockType>,
       logger: Logging.Logger? = nil,
       @_inheritActorContext @_implicitSelfCapture operation: (Self) async throws -> ReturnType,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
    ) async throws -> ReturnType {
       let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                              clock: clock,
                                              backoff: backoff,
                                              logger: logger,
-                                             shouldRetry: shouldRetry)
+                                             recoverFromFailure: recoverFromFailure)
 
       return try await retry(with: configuration,
                              operation: operation)
@@ -276,7 +276,7 @@ extension RetryableRequest {
    ///
    /// Failures may not be retryable for the following reasons:
    /// - The response indicates that the failure is not transient. 
-   /// - ``RetryConfiguration/shouldRetry`` returns `false`.
+   /// - ``RetryConfiguration/recoverFromFailure`` returns ``RecoveryAction/throw``.
    /// - The thrown error is ``NotRetryable``.
    /// - The number of attempts reached ``RetryConfiguration/maxAttempts``.
    ///

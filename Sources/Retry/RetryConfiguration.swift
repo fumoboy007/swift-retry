@@ -49,10 +49,10 @@ public struct RetryConfiguration<ClockType: Clock> {
    ///    detailed log messages and better integration with the logging system.
    public var logger: Logging.Logger?
 
-   /// A closure that determines whether to retry, given the error that was thrown.
+   /// A closure that determines what action to take, given the error that was thrown.
    ///
    /// - Note: The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
-   public var shouldRetry: @Sendable (any Error) -> Bool
+   public var recoverFromFailure: @Sendable (any Error) -> RecoveryAction<ClockType>
 
 #if canImport(OSLog)
    /// Configures the retry behavior when the clock type is `ContinuousClock`.
@@ -64,21 +64,21 @@ public struct RetryConfiguration<ClockType: Clock> {
    ///       log messages using the `debug` log level.
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    public init(
       maxAttempts: Int? = 3,
       backoff: Backoff<ContinuousClock> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
       appleLogger: os.Logger? = nil,
       logger: Logging.Logger? = nil,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ContinuousClock> = { _ in .retry }
    ) where ClockType == ContinuousClock {
       self.init(maxAttempts: maxAttempts,
                 clock: ContinuousClock(),
                 backoff: backoff,
                 appleLogger: appleLogger,
                 logger: logger,
-                shouldRetry: shouldRetry)
+                recoverFromFailure: recoverFromFailure)
    }
 
    /// Configures the retry behavior when the clock’s duration type is the standard `Duration` type.
@@ -91,15 +91,15 @@ public struct RetryConfiguration<ClockType: Clock> {
    ///       log messages using the `debug` log level.
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    public init(
       maxAttempts: Int? = 3,
       clock: ClockType,
       backoff: Backoff<ClockType> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
       appleLogger: os.Logger? = nil,
       logger: Logging.Logger? = nil,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
    ) where ClockType.Duration == Duration {
       if let maxAttempts {
          precondition(maxAttempts > 0)
@@ -113,7 +113,7 @@ public struct RetryConfiguration<ClockType: Clock> {
       self.appleLogger = appleLogger
       self.logger = logger
 
-      self.shouldRetry = shouldRetry
+      self.recoverFromFailure = recoverFromFailure
    }
 
    /// Configures the retry behavior.
@@ -126,15 +126,15 @@ public struct RetryConfiguration<ClockType: Clock> {
    ///       log messages using the `debug` log level.
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    public init(
       maxAttempts: Int? = 3,
       clock: ClockType,
       backoff: Backoff<ClockType>,
       appleLogger: os.Logger? = nil,
       logger: Logging.Logger? = nil,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
    ) {
       if let maxAttempts {
          precondition(maxAttempts > 0)
@@ -148,7 +148,7 @@ public struct RetryConfiguration<ClockType: Clock> {
       self.appleLogger = appleLogger
       self.logger = logger
 
-      self.shouldRetry = shouldRetry
+      self.recoverFromFailure = recoverFromFailure
    }
 #else
    /// Configures the retry behavior when the clock type is `ContinuousClock`.
@@ -158,19 +158,19 @@ public struct RetryConfiguration<ClockType: Clock> {
    ///    - backoff: The choice of algorithm that will be used to determine how long to sleep in between attempts.
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    public init(
       maxAttempts: Int? = 3,
       backoff: Backoff<ContinuousClock> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
       logger: Logging.Logger? = nil,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ContinuousClock> = { _ in .retry }
    ) where ClockType == ContinuousClock {
       self.init(maxAttempts: maxAttempts,
                 clock: ContinuousClock(),
                 backoff: backoff,
                 logger: logger,
-                shouldRetry: shouldRetry)
+                recoverFromFailure: recoverFromFailure)
    }
 
    /// Configures the retry behavior when the clock’s duration type is the standard `Duration` type.
@@ -181,14 +181,14 @@ public struct RetryConfiguration<ClockType: Clock> {
    ///    - backoff: The choice of algorithm that will be used to determine how long to sleep in between attempts.
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    public init(
       maxAttempts: Int? = 3,
       clock: ClockType,
       backoff: Backoff<ClockType> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
       logger: Logging.Logger? = nil,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
    ) where ClockType.Duration == Duration {
       if let maxAttempts {
          precondition(maxAttempts > 0)
@@ -201,7 +201,7 @@ public struct RetryConfiguration<ClockType: Clock> {
 
       self.logger = logger
 
-      self.shouldRetry = shouldRetry
+      self.recoverFromFailure = recoverFromFailure
    }
 
    /// Configures the retry behavior.
@@ -212,14 +212,14 @@ public struct RetryConfiguration<ClockType: Clock> {
    ///    - backoff: The choice of algorithm that will be used to determine how long to sleep in between attempts.
    ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
    ///       messages using the `debug` log level.
-   ///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-   ///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    public init(
       maxAttempts: Int? = 3,
       clock: ClockType,
       backoff: Backoff<ClockType>,
       logger: Logging.Logger? = nil,
-      shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
    ) {
       if let maxAttempts {
          precondition(maxAttempts > 0)
@@ -232,7 +232,7 @@ public struct RetryConfiguration<ClockType: Clock> {
 
       self.logger = logger
 
-      self.shouldRetry = shouldRetry
+      self.recoverFromFailure = recoverFromFailure
    }
 #endif
 
@@ -268,9 +268,9 @@ public struct RetryConfiguration<ClockType: Clock> {
       return newConfiguration
    }
 
-   public func withShouldRetry(_ newValue: @escaping @Sendable (any Error) -> Bool) -> Self {
+   public func withRecoverFromFailure(_ newValue: @escaping @Sendable (any Error) -> RecoveryAction<ClockType>) -> Self {
       var newConfiguration = self
-      newConfiguration.shouldRetry = newValue
+      newConfiguration.recoverFromFailure = newValue
       return newConfiguration
    }
 }

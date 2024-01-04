@@ -38,7 +38,7 @@ final class RetryTests: XCTestCase {
          maxAttempts: Self.maxAttempts,
          clock: clockFake,
          backoff: Backoff { BackoffAlgorithmFake(clock: $0) },
-         shouldRetry: { _ in true }
+         recoverFromFailure: { _ in .retry }
       )
    }
 
@@ -87,11 +87,11 @@ final class RetryTests: XCTestCase {
       assertRetried(times: Self.maxAttempts - 1)
    }
 
-   func testFailure_shouldRetryReturnsFalse_failureWithoutRetry() async throws {
+   func testFailure_recoverFromFailureDecidesToThrow_failureWithoutRetry() async throws {
       precondition(Self.maxAttempts > 1)
 
       try await assertThrows(ErrorFake.self) {
-         try await retry(with: testingConfiguration.withShouldRetry({ _ in false })) {
+         try await retry(with: testingConfiguration.withRecoverFromFailure({ _ in .throw })) {
             throw ErrorFake()
          }
       }
@@ -99,12 +99,12 @@ final class RetryTests: XCTestCase {
       assertRetried(times: 0)
    }
 
-   func testFailure_isNotRetryableError_shouldRetryNotCalled_failureWithoutRetry() async throws {
+   func testFailure_isNotRetryableError_recoverFromFailureNotCalled_failureWithoutRetry() async throws {
       precondition(Self.maxAttempts > 1)
 
-      let configuration = testingConfiguration.withShouldRetry { error in
-         XCTFail("`shouldRetry` should not be called when the error is `NotRetryable`.")
-         return true
+      let configuration = testingConfiguration.withRecoverFromFailure { error in
+         XCTFail("`recoverFromFailure` should not be called when the error is `NotRetryable`.")
+         return .retry
       }
 
       try await assertThrows(ErrorFake.self) {
@@ -116,12 +116,12 @@ final class RetryTests: XCTestCase {
       assertRetried(times: 0)
    }
 
-   func testOneFailure_isRetryableError_shouldRetryNotCalled_successAfterRetry() async throws {
+   func testOneFailure_isRetryableError_recoverFromFailureNotCalled_successAfterRetry() async throws {
       precondition(Self.maxAttempts > 1)
 
-      let configuration = testingConfiguration.withShouldRetry { error in
-         XCTFail("`shouldRetry` should not be called when the error is `Retryable`.")
-         return false
+      let configuration = testingConfiguration.withRecoverFromFailure { error in
+         XCTFail("`recoverFromFailure` should not be called when the error is `Retryable`.")
+         return .throw
       }
 
       var isFirstAttempt = true
@@ -159,12 +159,12 @@ final class RetryTests: XCTestCase {
       assertRetried(times: 0)
    }
 
-   func testFailure_isCancellationError_shouldRetryNotCalled_failureWithoutRetry() async throws {
+   func testFailure_isCancellationError_recoverFromFailureNotCalled_failureWithoutRetry() async throws {
       precondition(Self.maxAttempts > 1)
 
-      let configuration = testingConfiguration.withShouldRetry { error in
-         XCTFail("`shouldRetry` should not be called when the error is `CancellationError`.")
-         return true
+      let configuration = testingConfiguration.withRecoverFromFailure { error in
+         XCTFail("`recoverFromFailure` should not be called when the error is `CancellationError`.")
+         return .retry
       }
 
       try await assertThrows(CancellationError.self) {

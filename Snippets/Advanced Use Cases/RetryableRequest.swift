@@ -18,18 +18,18 @@ extension MyRequest: RetryableRequest {
       with configuration: RetryConfiguration<ClockType>,
       @_inheritActorContext @_implicitSelfCapture operation: (Self) async throws -> ReturnType
    ) async throws -> ReturnType {
-      // We can override the `shouldRetry` closure to automatically handle errors specific to
-      // the communication protocol.
-      let configuration = configuration.withShouldRetry { error in
+      // We can override the `recoverFromFailure` closure to automatically handle errors
+      // specific to the communication protocol.
+      let configuration = configuration.withRecoverFromFailure { error in
          switch error {
          case is MyTransientCommunicationError:
-            return true
+            return .retry
 
          case is MyNonTransientCommunicationError:
-            return false
+            return .throw
 
          default:
-            return configuration.shouldRetry(error)
+            return configuration.recoverFromFailure(error)
          }
       }
 

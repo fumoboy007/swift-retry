@@ -30,7 +30,7 @@ import OSLog
 /// Sleeps in between attempts using `ContinuousClock`.
 ///
 /// Failures may not be retryable for the following reasons:
-/// - `shouldRetry` returns `false`.
+/// - `recoverFromFailure` returns ``RecoveryAction/throw``.
 /// - The thrown error is ``NotRetryable``.
 /// - The number of attempts reached `maxAttempts`.
 ///
@@ -42,8 +42,8 @@ import OSLog
 ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
 ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
 ///    - operation: The operation to attempt.
-///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
 /// - SeeAlso: ``RetryableRequest``
@@ -53,7 +53,7 @@ public func retry<ReturnType>(
    appleLogger: os.Logger? = nil,
    logger: Logging.Logger? = nil,
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType,
-   shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ContinuousClock> = { _ in .retry }
 ) async throws -> ReturnType {
    return try await retry(maxAttempts: maxAttempts,
                           clock: ContinuousClock(),
@@ -61,14 +61,14 @@ public func retry<ReturnType>(
                           appleLogger: appleLogger,
                           logger: logger,
                           operation: operation,
-                          shouldRetry: shouldRetry)
+                          recoverFromFailure: recoverFromFailure)
 }
 
 /// Attempts the given operation until it succeeds or until the failure is no longer retryable.
 /// Sleeps in between attempts using the given clock whose duration type is the standard `Duration` type.
 ///
 /// Failures may not be retryable for the following reasons:
-/// - `shouldRetry` returns `false`.
+/// - `recoverFromFailure` returns ``RecoveryAction/throw``.
 /// - The thrown error is ``NotRetryable``.
 /// - The number of attempts reached `maxAttempts`.
 ///
@@ -81,8 +81,8 @@ public func retry<ReturnType>(
 ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
 ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
 ///    - operation: The operation to attempt.
-///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
 /// - SeeAlso: ``RetryableRequest``
@@ -93,14 +93,14 @@ public func retry<ClockType, ReturnType>(
    appleLogger: os.Logger? = nil,
    logger: Logging.Logger? = nil,
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType,
-   shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
 ) async throws -> ReturnType where ClockType.Duration == Duration {
    let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                           clock: clock,
                                           backoff: backoff,
                                           appleLogger: appleLogger,
                                           logger: logger,
-                                          shouldRetry: shouldRetry)
+                                          recoverFromFailure: recoverFromFailure)
 
    return try await retry(with: configuration,
                           operation: operation)
@@ -110,7 +110,7 @@ public func retry<ClockType, ReturnType>(
 /// Sleeps in between attempts using the given clock.
 ///
 /// Failures may not be retryable for the following reasons:
-/// - `shouldRetry` returns `false`.
+/// - `recoverFromFailure` returns ``RecoveryAction/throw``.
 /// - The thrown error is ``NotRetryable``.
 /// - The number of attempts reached `maxAttempts`.
 ///
@@ -123,8 +123,8 @@ public func retry<ClockType, ReturnType>(
 ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
 ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
 ///    - operation: The operation to attempt.
-///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
 /// - SeeAlso: ``RetryableRequest``
@@ -135,14 +135,14 @@ public func retry<ClockType, ReturnType>(
    appleLogger: os.Logger? = nil,
    logger: Logging.Logger? = nil,
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType,
-   shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
 ) async throws -> ReturnType {
    let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                           clock: clock,
                                           backoff: backoff,
                                           appleLogger: appleLogger,
                                           logger: logger,
-                                          shouldRetry: shouldRetry)
+                                          recoverFromFailure: recoverFromFailure)
 
    return try await retry(with: configuration,
                           operation: operation)
@@ -152,7 +152,7 @@ public func retry<ClockType, ReturnType>(
 /// Sleeps in between attempts using `ContinuousClock`.
 ///
 /// Failures may not be retryable for the following reasons:
-/// - `shouldRetry` returns `false`.
+/// - `recoverFromFailure` returns ``RecoveryAction/throw``.
 /// - The thrown error is ``NotRetryable``.
 /// - The number of attempts reached `maxAttempts`.
 ///
@@ -162,8 +162,8 @@ public func retry<ClockType, ReturnType>(
 ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
 ///       messages using the `debug` log level.
 ///    - operation: The operation to attempt.
-///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
 /// - SeeAlso: ``RetryableRequest``
@@ -172,21 +172,21 @@ public func retry<ReturnType>(
    backoff: Backoff<ContinuousClock> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
    logger: Logging.Logger? = nil,
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType,
-   shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ContinuousClock> = { _ in .retry }
 ) async throws -> ReturnType {
    return try await retry(maxAttempts: maxAttempts,
                           clock: ContinuousClock(),
                           backoff: backoff,
                           logger: logger,
                           operation: operation,
-                          shouldRetry: shouldRetry)
+                          recoverFromFailure: recoverFromFailure)
 }
 
 /// Attempts the given operation until it succeeds or until the failure is no longer retryable.
 /// Sleeps in between attempts using the given clock whose duration type is the standard `Duration` type.
 ///
 /// Failures may not be retryable for the following reasons:
-/// - `shouldRetry` returns `false`.
+/// - `recoverFromFailure` returns ``RecoveryAction/throw``.
 /// - The thrown error is ``NotRetryable``.
 /// - The number of attempts reached `maxAttempts`.
 ///
@@ -197,8 +197,8 @@ public func retry<ReturnType>(
 ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
 ///       messages using the `debug` log level.
 ///    - operation: The operation to attempt.
-///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
 /// - SeeAlso: ``RetryableRequest``
@@ -208,13 +208,13 @@ public func retry<ClockType, ReturnType>(
    backoff: Backoff<ClockType> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
    logger: Logging.Logger? = nil,
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType,
-   shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
 ) async throws -> ReturnType where ClockType.Duration == Duration {
    let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                           clock: clock,
                                           backoff: backoff,
                                           logger: logger,
-                                          shouldRetry: shouldRetry)
+                                          recoverFromFailure: recoverFromFailure)
 
    return try await retry(with: configuration,
                           operation: operation)
@@ -224,7 +224,7 @@ public func retry<ClockType, ReturnType>(
 /// Sleeps in between attempts using the given clock.
 ///
 /// Failures may not be retryable for the following reasons:
-/// - `shouldRetry` returns `false`.
+/// - `recoverFromFailure` returns ``RecoveryAction/throw``.
 /// - The thrown error is ``NotRetryable``.
 /// - The number of attempts reached `maxAttempts`.
 ///
@@ -235,8 +235,8 @@ public func retry<ClockType, ReturnType>(
 ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
 ///       messages using the `debug` log level.
 ///    - operation: The operation to attempt.
-///    - shouldRetry: A closure that determines whether to retry, given the error that was thrown. The closure
-///       will not be called if the error is ``Retryable`` or ``NotRetryable``.
+///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
+///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
 ///
 /// - SeeAlso: ``retry(with:operation:)``
 /// - SeeAlso: ``RetryableRequest``
@@ -246,13 +246,13 @@ public func retry<ClockType, ReturnType>(
    backoff: Backoff<ClockType>,
    logger: Logging.Logger? = nil,
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType,
-   shouldRetry: @escaping @Sendable (any Error) -> Bool = { _ in true }
+   recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
 ) async throws -> ReturnType {
    let configuration = RetryConfiguration(maxAttempts: maxAttempts,
                                           clock: clock,
                                           backoff: backoff,
                                           logger: logger,
-                                          shouldRetry: shouldRetry)
+                                          recoverFromFailure: recoverFromFailure)
 
    return try await retry(with: configuration,
                           operation: operation)
@@ -262,7 +262,7 @@ public func retry<ClockType, ReturnType>(
 /// Attempts the given operation until it succeeds or until the failure is no longer retryable.
 ///
 /// Failures may not be retryable for the following reasons:
-/// - ``RetryConfiguration/shouldRetry`` returns `false`.
+/// - ``RetryConfiguration/recoverFromFailure`` returns ``RecoveryAction/throw``.
 /// - The thrown error is ``NotRetryable``.
 /// - The number of attempts reached ``RetryConfiguration/maxAttempts``.
 ///
@@ -288,12 +288,12 @@ public func retry<ClockType, ReturnType>(
    let appleLogger = configuration.appleLogger
 #endif
 
-   let shouldRetry = configuration.shouldRetry
+   let recoverFromFailure = configuration.recoverFromFailure
 
    var attempt = 0
    while true {
       var latestError: any Error
-      var isErrorRetryable: Bool
+      var recoveryAction: RecoveryAction<ClockType>
 
       do {
          return try await operation()
@@ -301,26 +301,26 @@ public func retry<ClockType, ReturnType>(
          switch error {
          case let error as Retryable:
             latestError = error
-            isErrorRetryable = true
+            recoveryAction = .retry
 
          case let error as NotRetryable:
             latestError = error
-            isErrorRetryable = false
+            recoveryAction = .throw
 
          case let error as CancellationError:
             latestError = error
-            isErrorRetryable = false
+            recoveryAction = .throw
 
          default:
             latestError = error
-            isErrorRetryable = shouldRetry(error)
+            recoveryAction = recoverFromFailure(error)
          }
 
          latestError = latestError.originalError
 
          // Need to check again because the error could have been wrapped.
          if latestError is CancellationError {
-            isErrorRetryable = false
+            recoveryAction = .throw
          }
       }
 
@@ -330,7 +330,8 @@ public func retry<ClockType, ReturnType>(
       // public and private data.
       logger?[metadataKey: "retry.error.type"] = "\(type(of: latestError))"
 
-      guard isErrorRetryable else {
+      switch recoveryAction {
+      case .throw:
          logger?.debug("Attempt failed. Error is not retryable.")
 #if canImport(OSLog)
          appleLogger?.debug("""
@@ -340,36 +341,37 @@ public func retry<ClockType, ReturnType>(
 #endif
 
          throw latestError
-      }
 
-      if let maxAttempts, attempt + 1 >= maxAttempts {
-         logger?.debug("Attempt failed. No remaining attempts.")
+      case .retry:
+         if let maxAttempts, attempt + 1 >= maxAttempts {
+            logger?.debug("Attempt failed. No remaining attempts.")
 #if canImport(OSLog)
-         appleLogger?.debug("""
+            appleLogger?.debug("""
             Attempt \(attempt, privacy: .public) failed with error of type `\(type(of: latestError), privacy: .public)`: `\(latestError)`. \
             No remaining attempts.
             """)
 #endif
 
-         throw latestError
-      }
+            throw latestError
+         }
 
-      let delay = backoff.nextDelay() as! ClockType.Duration
+         let delay = backoff.nextDelay() as! ClockType.Duration
 
-      logger?.debug("Attempt failed. Will wait before retrying.", metadata: [
-         // Unfortunately, the generic `ClockType.Duration` does not have a way to convert `delay`
-         // to a number, so we have to settle for the implementation-defined string representation.
-         "retry.delay": "\(delay)"
-      ])
+         logger?.debug("Attempt failed. Will wait before retrying.", metadata: [
+            // Unfortunately, the generic `ClockType.Duration` does not have a way to convert `delay`
+            // to a number, so we have to settle for the implementation-defined string representation.
+            "retry.delay": "\(delay)"
+         ])
 #if canImport(OSLog)
-      appleLogger?.debug("""
+         appleLogger?.debug("""
          Attempt \(attempt, privacy: .public) failed with error of type `\(type(of: latestError), privacy: .public)`: `\(latestError)`. \
          Will wait \(String(describing: delay), privacy: .public) before retrying.
          """)
 #endif
 
-      try await clock.sleep(for: delay)
+         try await clock.sleep(for: delay)
 
-      attempt += 1
+         attempt += 1
+      }
    }
 }

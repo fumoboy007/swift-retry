@@ -6,7 +6,7 @@ Retries with sensible defaults and powerful flexibility.
 
 ### Designed for Swift Concurrency
 
-The ``retry(maxAttempts:backoff:appleLogger:logger:operation:shouldRetry:)`` function is an `async` function that runs the given `async` closure repeatedly until it succeeds or until the failure is no longer retryable. The function sleeps in between attempts while respecting task cancellation.
+The ``retry(maxAttempts:backoff:appleLogger:logger:operation:recoverFromFailure:)`` function is an `async` function that runs the given `async` closure repeatedly until it succeeds or until the failure is no longer retryable. The function sleeps in between attempts while respecting task cancellation.
 
 ### Sensible Defaults
 
@@ -17,7 +17,7 @@ An important but often overlooked default is the choice of backoff algorithm, wh
 ### Powerful Flexibility
 
 The API provides several customization points to accommodate any use case:
-- Retries can be selectively enabled or disabled for specific error cases by providing a custom ``RetryConfiguration/shouldRetry`` closure. Retries can also be selectively enabled or disabled for specific code paths by wrapping thrown errors with ``Retryable`` or ``NotRetryable``. 
+- Retries can be selectively enabled or disabled for specific error cases by providing a custom ``RetryConfiguration/recoverFromFailure`` closure. Retries can also be selectively enabled or disabled for specific code paths by wrapping thrown errors with ``Retryable`` or ``NotRetryable``. 
 - The ``RetryConfiguration`` type encapsulates the retry behavior so that it can be reused across multiple call sites without duplicating code.
 - The ``Backoff`` type represents the choice of algorithm that will be used to determine how long to sleep in between attempts. It has built-in support for common algorithms but can be initialized with a custom ``BackoffAlgorithm`` implementation if needed.
 - The ``RetryConfiguration/clock`` that is used to sleep in between attempts can be replaced. For example, one might use a fake `Clock` implementation in automated tests to ensure the tests are deterministic and efficient.
@@ -31,14 +31,15 @@ The API provides several customization points to accommodate any use case:
 
 ### Retrying Operations
 
-- ``retry(maxAttempts:backoff:appleLogger:logger:operation:shouldRetry:)``
-- ``retry(maxAttempts:clock:backoff:appleLogger:logger:operation:shouldRetry:)-2cjan``
-- ``retry(maxAttempts:clock:backoff:appleLogger:logger:operation:shouldRetry:)-2aiqm``
+- ``retry(maxAttempts:backoff:appleLogger:logger:operation:recoverFromFailure:)``
+- ``retry(maxAttempts:clock:backoff:appleLogger:logger:operation:recoverFromFailure:)-6s251``
+- ``retry(maxAttempts:clock:backoff:appleLogger:logger:operation:recoverFromFailure:)-2e9va``
 - ``retry(with:operation:)``
 
 ### Configuring the Retry Behavior
 
 - ``RetryConfiguration``
+- ``RecoveryAction``
 - ``Backoff``
 - ``BackoffAlgorithm``
 

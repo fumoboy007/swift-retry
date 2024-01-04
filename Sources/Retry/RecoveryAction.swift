@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright © 2023 Darren Mo.
+// Copyright © 2024 Darren Mo.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,21 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/// A concrete error type that is always retryable and wraps an underlying error.
-///
-/// Throwing this error will always result in a retry, unless there are other conditions that make the failure
-/// not retryable like reaching the maximum number of attempts.
-///
-/// This wrapper type exists for the cases where ``RetryConfiguration/recoverFromFailure``
-/// cannot make a good decision (e.g. the underlying error type is not exposed by a library dependency).
-public struct Retryable: Error {
-   let underlyingError: any Error
+/// The action to take after an attempt fails.
+public enum RecoveryAction<ClockType: Clock> {
+   /// Retries the operation, unless the number of attempts reached ``RetryConfiguration/maxAttempts``.
+   case retry
 
-   /// Wraps the given error.
-   ///
-   /// - Parameter underlyingError: The error being wrapped. This will be the actual error thrown
-   ///    if the failure is no longer retryable.
-   public init(_ underlyingError: any Error) {
-      self.underlyingError = underlyingError
-   }
+   /// Throws the error without retrying the operation.
+   case `throw`
 }

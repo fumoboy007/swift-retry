@@ -32,8 +32,8 @@
 ///
 /// Conforming request types also need to implement
 /// ``unsafeRetryIgnoringIdempotency(with:operation:)``. Implementations may choose
-/// to override ``RetryConfiguration/shouldRetry`` to automatically handle errors specific to
-/// the communication protocol.
+/// to override ``RetryConfiguration/recoverFromFailure`` to automatically handle errors
+/// specific to the communication protocol.
 public protocol RetryableRequest {
    /// Determines whether the request is idempotent.
    ///
@@ -48,7 +48,7 @@ public protocol RetryableRequest {
    ///
    /// Failures may not be retryable for the following reasons:
    /// - The response indicates that the failure is not transient.
-   /// - ``RetryConfiguration/shouldRetry`` returns `false`.
+   /// - ``RetryConfiguration/recoverFromFailure`` returns ``RecoveryAction/throw``.
    /// - The thrown error is ``NotRetryable``.
    /// - The number of attempts reached ``RetryConfiguration/maxAttempts``.
    ///

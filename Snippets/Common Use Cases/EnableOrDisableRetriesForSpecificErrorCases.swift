@@ -8,8 +8,8 @@ import Retry
 
 try await retry {
    try await doSomething()
-} shouldRetry: { error in
-   return error.isRetryable
+} recoverFromFailure: { error in
+   return error.isRetryable ? .retry : .throw
 }
 
 extension Error {

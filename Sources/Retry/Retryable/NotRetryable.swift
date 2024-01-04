@@ -24,8 +24,8 @@
 ///
 /// Throwing this error will prevent a retry.
 ///
-/// This wrapper type exists for the cases where ``RetryConfiguration/shouldRetry`` cannot make
-/// a good decision (e.g. the underlying error type is not exposed by a library dependency).
+/// This wrapper type exists for the cases where ``RetryConfiguration/recoverFromFailure``
+/// cannot make a good decision (e.g. the underlying error type is not exposed by a library dependency).
 public struct NotRetryable: Error {
    let underlyingError: any Error
 
