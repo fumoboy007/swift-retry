@@ -31,13 +31,17 @@ struct BackoffAlgorithmFake<ClockType: Clock>: BackoffAlgorithm {
       self.clock = clock
    }
 
-   func nextDelay() -> ClockType.Duration {
+   mutating func nextDelay() -> ClockType.Duration {
+      defer {
+         attempt += 1
+      }
+
       return clock.minimumResolution * attempt
    }
 
    static func delays(ofCount delayCount: Int,
                       for clock: ClockType) -> [ClockType.Duration] {
-      let algorithm = BackoffAlgorithmFake(clock: clock)
+      var algorithm = BackoffAlgorithmFake(clock: clock)
       return (0..<delayCount).map { _ in algorithm.nextDelay() }
    }
 }
