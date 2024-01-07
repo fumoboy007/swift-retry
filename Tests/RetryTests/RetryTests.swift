@@ -99,6 +99,65 @@ final class RetryTests: XCTestCase {
       assertRetried(times: 0)
    }
 
+   func testOneFailure_recoverFromFailureRequestsMinDelay_didNotReachMaxAttempts_successAfterRetry() async throws {
+      precondition(Self.maxAttempts > 1)
+
+      let clockFake = clockFake!
+      let configuration = testingConfiguration.withRecoverFromFailure { _ in
+         let minDelay = (
+            BackoffAlgorithmFake.delays(ofCount: Self.maxAttempts - 1, for: clockFake)
+               .reduce(.zero, +)
+         )
+
+         return .retryAfter(clockFake.now + minDelay)
+      }
+
+      var isFirstAttempt = true
+
+      try await retry(with: configuration) {
+         if isFirstAttempt {
+            isFirstAttempt = false
+
+            throw ErrorFake()
+         } else {
+            // Success.
+         }
+      }
+
+      assertRetried(times: 1)
+   }
+
+   func testFailure_recoverFromFailureRequestsMinDelay_reachedMaxAttempts_failureWithoutRetry() async throws {
+      precondition(Self.maxAttempts > 1)
+
+      let clockFake = clockFake!
+      let configuration = testingConfiguration.withRecoverFromFailure { _ in
+         let minDelay = (
+            BackoffAlgorithmFake.delays(ofCount: Self.maxAttempts - 1, for: clockFake)
+               .reduce(.zero, +)
+            + clockFake.minimumResolution
+         )
+
+         return .retryAfter(clockFake.now + minDelay)
+      }
+
+      var isFirstAttempt = true
+
+      try await assertThrows(ErrorFake.self) {
+         try await retry(with: configuration) {
+            if isFirstAttempt {
+               isFirstAttempt = false
+
+               throw ErrorFake()
+            } else {
+               // Success.
+            }
+         }
+      }
+
+      assertRetried(times: 0)
+   }
+
    func testFailure_isNotRetryableError_recoverFromFailureNotCalled_failureWithoutRetry() async throws {
       precondition(Self.maxAttempts > 1)
 

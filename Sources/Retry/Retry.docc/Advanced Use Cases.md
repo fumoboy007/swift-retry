@@ -11,3 +11,7 @@
 ## Adding Safe Retry Methods to a Request Type
 
 @Snippet(path: "swift-retry/Snippets/Advanced Use Cases/RetryableRequest")
+
+## Enforcing a Minimum Delay Before Retrying
+
+@Snippet(path: "swift-retry/Snippets/Advanced Use Cases/EnforceMinDelay")

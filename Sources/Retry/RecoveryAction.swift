@@ -25,6 +25,17 @@ public enum RecoveryAction<ClockType: Clock> {
    /// Retries the operation, unless the number of attempts reached ``RetryConfiguration/maxAttempts``.
    case retry
 
+   /// Retries the operation only after the given instant in time has been reached.
+   ///
+   /// For example, an HTTP server may send a `Retry-After` header in its response, which indicates
+   /// to the client that the request should not be retried until after a minimum amount of time has passed.
+   /// This recovery action can be used for such a use case.
+   ///
+   /// It is not guaranteed that the operation will be retried. The backoff process continues until the given
+   /// instant in time has been reached, incrementing the number of attempts as usual. The operation will
+   /// be retried only if the number of attempts has not reached ``RetryConfiguration/maxAttempts``.
+   case retryAfter(ClockType.Instant)
+
    /// Throws the error without retrying the operation.
    case `throw`
 }

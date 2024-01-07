@@ -273,7 +273,7 @@ public func retry<ClockType, ReturnType>(
 /// - Note: The function will log messages using the `debug` log level to ``RetryConfiguration/logger``
 ///    (and/or ``RetryConfiguration/appleLogger`` on Apple platforms).
 ///
-/// - SeeAlso: ``RetryableRequest`` 
+/// - SeeAlso: ``RetryableRequest``
 public func retry<ClockType, ReturnType>(
    with configuration: RetryConfiguration<ClockType>,
    @_inheritActorContext @_implicitSelfCapture operation: () async throws -> ReturnType
@@ -372,6 +372,52 @@ public func retry<ClockType, ReturnType>(
          try await clock.sleep(for: delay)
 
          attempt += 1
+
+      case .retryAfter(let nextRetryMinInstant):
+         let minDelay = clock.now.duration(to: nextRetryMinInstant)
+         // Unfortunately, the generic `ClockType.Duration` does not have a way to convert `minDelay`
+         // to a number, so we have to settle for the implementation-defined string representation.
+         logger?[metadataKey: "retry.after"] = "\(minDelay)"
+
+         var delay = ClockType.Duration.zero
+         var attemptsUsedToAchieveMinDelay = 0
+         repeat {
+            if let maxAttempts {
+               guard attempt + attemptsUsedToAchieveMinDelay + 1 < maxAttempts else {
+                  logger?.debug("Attempt failed. No remaining attempts after backing off normally to achieve the minimum delay.")
+#if canImport(OSLog)
+                  appleLogger?.debug("""
+                  Attempt \(attempt, privacy: .public) failed with error of type `\(type(of: latestError), privacy: .public)`: `\(latestError)`. \
+                  The `recoverFromFailure` closure requested a minimum delay of \(String(describing: minDelay)) before retrying. \
+                  No remaining attempts after backing off normally to achieve the minimum delay.
+                  """)
+#endif
+
+                  throw latestError
+               }
+            }
+
+            delay += backoff.nextDelay() as! ClockType.Duration
+
+            attemptsUsedToAchieveMinDelay += 1
+         } while delay < clock.now.duration(to: nextRetryMinInstant)
+
+         logger?.debug("Attempt failed. Will wait before retrying.", metadata: [
+            // Unfortunately, the generic `ClockType.Duration` does not have a way to convert `delay`
+            // to a number, so we have to settle for the implementation-defined string representation.
+            "retry.delay": "\(delay)"
+         ])
+#if canImport(OSLog)
+         appleLogger?.debug("""
+         Attempt \(attempt, privacy: .public) failed with error of type `\(type(of: latestError), privacy: .public)`: `\(latestError)`. \
+         The `recoverFromFailure` closure requested a minimum delay of \(String(describing: minDelay)) before retrying. \
+         Will wait \(String(describing: delay), privacy: .public) before retrying.
+         """)
+#endif
+
+         try await clock.sleep(for: delay)
+
+         attempt += attemptsUsedToAchieveMinDelay
       }
    }
 }
