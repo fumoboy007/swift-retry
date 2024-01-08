@@ -34,16 +34,15 @@ final class MyServiceImplementationTests: XCTestCase {
 class ClockFake: Clock, @unchecked Sendable {
    typealias Instant = ContinuousClock.Instant
 
-   private let realClock = ContinuousClock()
-
    private let lock = NSLock()
 
-   private var _now: Instant
-
    init() {
+      let realClock = ContinuousClock()
       self._now = realClock.now
+      self.minimumResolution = realClock.minimumResolution
    }
 
+   private var _now: Instant
    var now: Instant {
       lock.lock()
       defer {
@@ -53,9 +52,7 @@ class ClockFake: Clock, @unchecked Sendable {
       return _now
    }
 
-   var minimumResolution: Duration {
-      return realClock.minimumResolution
-   }
+   let minimumResolution: Duration
 
    func sleep(until deadline: Instant,
               tolerance: Duration?) async throws {
