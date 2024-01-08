@@ -44,10 +44,10 @@ where ClockType: Clock, RandomNumberGeneratorType: RandomNumberGenerator {
       self.clockMinResolution = clock.minimumResolution
 
       self.baseDelayInClockTicks = baseDelay / clockMinResolution
-      precondition(baseDelayInClockTicks > 0)
+      precondition(baseDelayInClockTicks > 0, "The base delay must be greater than zero.")
 
       if let maxDelay {
-         precondition(maxDelay >= baseDelay)
+         precondition(maxDelay >= baseDelay, "The max delay must be greater than or equal to the base delay.")
          self.maxDelayInClockTicks = min(maxDelay / clockMinResolution,
                                          Double(Self.implicitMaxDelayInClockTicks))
       } else {

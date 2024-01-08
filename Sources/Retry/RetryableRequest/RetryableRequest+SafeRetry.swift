@@ -292,7 +292,7 @@ extension RetryableRequest {
       with configuration: RetryConfiguration<ClockType>,
       @_inheritActorContext @_implicitSelfCapture operation: (Self) async throws -> ReturnType
    ) async throws -> ReturnType {
-      precondition(isIdempotent)
+      precondition(isIdempotent, "The request is not idempotent: `\(self)`.")
 
       return try await unsafeRetryIgnoringIdempotency(with: configuration,
                                                       operation: operation)
