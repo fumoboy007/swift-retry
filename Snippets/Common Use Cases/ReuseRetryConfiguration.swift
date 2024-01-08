@@ -7,20 +7,23 @@ import Retry
 
 // snippet.show
 
-extension RetryConfiguration<ContinuousClock> {
-   static let standard = RetryConfiguration(
-      recoverFromFailure: { $0.isRetryable ? .retry : .throw }
-   )
+extension RetryConfiguration where ClockType.Duration == Duration {
+   static func standard(using clock: ClockType = ContinuousClock()) -> Self {
+      return RetryConfiguration(
+         clock: clock,
+         recoverFromFailure: { $0.isRetryable ? .retry : .throw }
+      )
+   }
 
-   static let highTolerance = (
-      Self.standard
+   static func highTolerance(using clock: ClockType = ContinuousClock()) -> Self {
+      return standard(using: clock)
          .withMaxAttempts(10)
          .withBackoff(.default(baseDelay: .seconds(1),
                                maxDelay: nil))
-   )
+   }
 }
 
-try await retry(with: .highTolerance.withLogger(myLogger)) {
+try await retry(with: .highTolerance().withLogger(myLogger)) {
    try await doSomething()
 }
 
