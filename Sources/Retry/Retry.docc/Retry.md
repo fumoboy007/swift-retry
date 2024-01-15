@@ -22,6 +22,12 @@ The API provides several customization points to accommodate any use case:
 - The ``Backoff`` type represents the choice of algorithm that will be used to determine how long to sleep in between attempts. It has built-in support for common algorithms but can be initialized with a custom ``BackoffAlgorithm`` implementation if needed.
 - The ``RetryConfiguration/clock`` that is used to sleep in between attempts can be replaced. For example, one might use a fake `Clock` implementation in automated tests to ensure the tests are deterministic and efficient.
 
+### Safe Retries
+
+The module exposes a ``RetryableRequest`` protocol to add safe retry methods to a conforming request type. The retry methods in the protocol are similar to the top-level retry functions, but safer. The retry methods in the protocol enforce that the request is idempotent since it is unsafe to retry a non-idempotent request.
+
+To retry HTTP requests, consider using the [`swift-http-error-handling`](https://swiftpackageindex.com/fumoboy007/swift-http-error-handling) package, which adds ``RetryableRequest`` conformance to the standard `HTTPRequest` type.
+
 ## Topics
 
 ### Examples
