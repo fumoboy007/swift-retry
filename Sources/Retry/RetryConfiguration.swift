@@ -55,32 +55,6 @@ public struct RetryConfiguration<ClockType: Clock> {
    public var recoverFromFailure: @Sendable (any Error) -> RecoveryAction<ClockType>
 
 #if canImport(OSLog)
-   /// Configures the retry behavior when the clock type is `ContinuousClock`.
-   ///
-   /// - Parameters:
-   ///    - maxAttempts: The maximum number of times to attempt the operation. Must be greater than `0`.
-   ///    - backoff: The choice of algorithm that will be used to determine how long to sleep in between attempts.
-   ///    - appleLogger: The logger that will be used to log a message when an attempt fails. The function will
-   ///       log messages using the `debug` log level.
-   ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
-   ///       messages using the `debug` log level. Consider using `appleLogger` when possible.
-   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
-   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
-   public init(
-      maxAttempts: Int? = 3,
-      backoff: Backoff<ContinuousClock> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
-      appleLogger: os.Logger? = nil,
-      logger: Logging.Logger? = nil,
-      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ContinuousClock> = { _ in .retry }
-   ) where ClockType == ContinuousClock {
-      self.init(maxAttempts: maxAttempts,
-                clock: ContinuousClock(),
-                backoff: backoff,
-                appleLogger: appleLogger,
-                logger: logger,
-                recoverFromFailure: recoverFromFailure)
-   }
-
    /// Configures the retry behavior when the clock’s duration type is the standard `Duration` type.
    ///
    /// - Parameters:
@@ -95,7 +69,7 @@ public struct RetryConfiguration<ClockType: Clock> {
    ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    public init(
       maxAttempts: Int? = 3,
-      clock: ClockType,
+      clock: ClockType = ContinuousClock(),
       backoff: Backoff<ClockType> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
       appleLogger: os.Logger? = nil,
       logger: Logging.Logger? = nil,
@@ -151,28 +125,6 @@ public struct RetryConfiguration<ClockType: Clock> {
       self.recoverFromFailure = recoverFromFailure
    }
 #else
-   /// Configures the retry behavior when the clock type is `ContinuousClock`.
-   ///
-   /// - Parameters:
-   ///    - maxAttempts: The maximum number of times to attempt the operation. Must be greater than `0`.
-   ///    - backoff: The choice of algorithm that will be used to determine how long to sleep in between attempts.
-   ///    - logger: The logger that will be used to log a message when an attempt fails. The function will log
-   ///       messages using the `debug` log level.
-   ///    - recoverFromFailure: A closure that determines what action to take, given the error that was thrown.
-   ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
-   public init(
-      maxAttempts: Int? = 3,
-      backoff: Backoff<ContinuousClock> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
-      logger: Logging.Logger? = nil,
-      recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ContinuousClock> = { _ in .retry }
-   ) where ClockType == ContinuousClock {
-      self.init(maxAttempts: maxAttempts,
-                clock: ContinuousClock(),
-                backoff: backoff,
-                logger: logger,
-                recoverFromFailure: recoverFromFailure)
-   }
-
    /// Configures the retry behavior when the clock’s duration type is the standard `Duration` type.
    ///
    /// - Parameters:
@@ -185,7 +137,7 @@ public struct RetryConfiguration<ClockType: Clock> {
    ///       The closure will not be called if the error is ``Retryable`` or ``NotRetryable``.
    public init(
       maxAttempts: Int? = 3,
-      clock: ClockType,
+      clock: ClockType = ContinuousClock(),
       backoff: Backoff<ClockType> = .default(baseDelay: .seconds(1), maxDelay: .seconds(20)),
       logger: Logging.Logger? = nil,
       recoverFromFailure: @escaping @Sendable (any Error) -> RecoveryAction<ClockType> = { _ in .retry }
