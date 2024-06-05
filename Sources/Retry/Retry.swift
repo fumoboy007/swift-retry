@@ -333,9 +333,7 @@ public func retry<ClockType, ReturnType>(
       }
 
       logger?[metadataKey: .attemptNumber] = "\(attempt)"
-      // Only log the error type rather than the full error in case the error has private user data.
-      // We can include the full error if and when the `Logging` API offers a distinction between
-      // public and private data.
+      logger?[metadataKey: .error] = "\(latestError)"
       logger?[metadataKey: .errorType] = "\(type(of: latestError))"
 
       switch recoveryAction {

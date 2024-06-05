@@ -33,9 +33,20 @@ extension Logger {
       /// The one-based attempt number.
       case attemptNumber = "retry.attempt"
 
+      /// The error that caused the attempt to fail.
+      ///
+      /// This is the original error after removing wrapper types like ``Retryable`` and ``NotRetryable``.
+      ///
+      /// - Warning: The error may contain private information. Consider redacting the metadata value later in
+      ///    the logging pipeline before the log message is persisted or transmitted. The less sensitive
+      ///    ``errorType`` metadata value may be sufficient.
+      case error = "retry.error"
+
       /// The Swift type of the error that caused the attempt to fail.
       ///
       /// This is the original error after removing wrapper types like ``Retryable`` and ``NotRetryable``.
+      ///
+      /// - SeeAlso: ``error``
       case errorType = "retry.error.type"
 
       /// The delay before the next attempt.
