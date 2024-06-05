@@ -320,11 +320,11 @@ public func retry<ClockType, ReturnType>(
          }
       }
 
-      logger?[metadataKey: "retry.attempt"] = "\(attempt)"
+      logger?[metadataKey: .attemptNumber] = "\(attempt)"
       // Only log the error type rather than the full error in case the error has private user data.
       // We can include the full error if and when the `Logging` API offers a distinction between
       // public and private data.
-      logger?[metadataKey: "retry.error.type"] = "\(type(of: latestError))"
+      logger?[metadataKey: .errorType] = "\(type(of: latestError))"
 
       switch recoveryAction {
       case .throw:
@@ -356,7 +356,7 @@ public func retry<ClockType, ReturnType>(
          logger?.debug("Attempt failed. Will wait before retrying.", metadata: [
             // Unfortunately, the generic `ClockType.Duration` does not have a way to convert `delay`
             // to a number, so we have to settle for the implementation-defined string representation.
-            "retry.delay": "\(delay)"
+            .retryDelay: "\(delay)"
          ])
 #if canImport(OSLog)
          appleLogger?.debug("""
@@ -373,7 +373,7 @@ public func retry<ClockType, ReturnType>(
          let minDelay = clock.now.duration(to: nextRetryMinInstant)
          // Unfortunately, the generic `ClockType.Duration` does not have a way to convert `minDelay`
          // to a number, so we have to settle for the implementation-defined string representation.
-         logger?[metadataKey: "retry.after"] = "\(minDelay)"
+         logger?[metadataKey: .requestedMinRetryDelay] = "\(minDelay)"
 
          var delay = ClockType.Duration.zero
          var attemptsUsedToAchieveMinDelay = 0
@@ -401,7 +401,7 @@ public func retry<ClockType, ReturnType>(
          logger?.debug("Attempt failed. Will wait before retrying.", metadata: [
             // Unfortunately, the generic `ClockType.Duration` does not have a way to convert `delay`
             // to a number, so we have to settle for the implementation-defined string representation.
-            "retry.delay": "\(delay)"
+            .retryDelay: "\(delay)"
          ])
 #if canImport(OSLog)
          appleLogger?.debug("""
