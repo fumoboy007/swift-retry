@@ -290,6 +290,18 @@ public func retry<ClockType, ReturnType>(
 
    let recoverFromFailure = configuration.recoverFromFailure
 
+   if let maxAttempts {
+      logger?[metadataKey: .maxAttempts] = "\(maxAttempts)"
+   }
+#if canImport(OSLog)
+   let maxAttemptsSentenceFragment: String
+   if let maxAttempts {
+      maxAttemptsSentenceFragment = " of \(maxAttempts)"
+   } else {
+      maxAttemptsSentenceFragment = ""
+   }
+#endif
+
    var attempt = 1
    while true {
       var latestError: any Error
@@ -360,7 +372,7 @@ public func retry<ClockType, ReturnType>(
          ])
 #if canImport(OSLog)
          appleLogger?.debug("""
-         Attempt \(attempt, privacy: .public) failed with error of type `\(type(of: latestError), privacy: .public)`: `\(latestError)`. \
+         Attempt \(attempt, privacy: .public)\(maxAttemptsSentenceFragment, privacy: .public) failed with error of type `\(type(of: latestError), privacy: .public)`: `\(latestError)`. \
          Will wait \(String(describing: delay), privacy: .public) before retrying.
          """)
 #endif
@@ -405,7 +417,7 @@ public func retry<ClockType, ReturnType>(
          ])
 #if canImport(OSLog)
          appleLogger?.debug("""
-         Attempt \(attempt, privacy: .public) failed with error of type `\(type(of: latestError), privacy: .public)`: `\(latestError)`. \
+         Attempt \(attempt, privacy: .public)\(maxAttemptsSentenceFragment, privacy: .public) failed with error of type `\(type(of: latestError), privacy: .public)`: `\(latestError)`. \
          The `recoverFromFailure` closure requested a minimum delay of \(String(describing: minDelay)) before retrying. \
          Will wait \(String(describing: delay), privacy: .public) before retrying.
          """)

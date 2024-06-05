@@ -25,6 +25,11 @@ import Logging
 extension Logger {
    /// The metadata keys used by the retry implementation.
    public enum RetryMetadataKey: String {
+      /// The maximum number of attempts that are allowed.
+      ///
+      /// The key will be absent if there is no configured maximum.
+      case maxAttempts = "retry.configuration.max_attempts"
+
       /// The one-based attempt number.
       case attemptNumber = "retry.attempt"
 
