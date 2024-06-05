@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright © 2023 Darren Mo.
+// Copyright © 2023–2024 Darren Mo.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -299,24 +299,20 @@ public func retry<ClockType, ReturnType>(
          return try await operation()
       } catch {
          switch error {
-         case let error as Retryable:
-            latestError = error
+         case is Retryable:
             recoveryAction = .retry
 
-         case let error as NotRetryable:
-            latestError = error
+         case is NotRetryable:
             recoveryAction = .throw
 
-         case let error as CancellationError:
-            latestError = error
+         case is CancellationError:
             recoveryAction = .throw
 
          default:
-            latestError = error
             recoveryAction = recoverFromFailure(error)
          }
 
-         latestError = latestError.originalError
+         latestError = error.originalError
 
          // Need to check again because the error could have been wrapped.
          if latestError is CancellationError {
