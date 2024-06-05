@@ -25,7 +25,7 @@ import Logging
 extension Logger {
    /// The metadata keys used by the retry implementation.
    public enum RetryMetadataKey: String {
-      /// The zero-based attempt number.
+      /// The one-based attempt number.
       case attemptNumber = "retry.attempt"
 
       /// The Swift type of the error that caused the attempt to fail.

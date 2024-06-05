@@ -290,7 +290,7 @@ public func retry<ClockType, ReturnType>(
 
    let recoverFromFailure = configuration.recoverFromFailure
 
-   var attempt = 0
+   var attempt = 1
    while true {
       var latestError: any Error
       var recoveryAction: RecoveryAction<ClockType>
@@ -339,7 +339,7 @@ public func retry<ClockType, ReturnType>(
          throw latestError
 
       case .retry:
-         if let maxAttempts, attempt + 1 >= maxAttempts {
+         if let maxAttempts, attempt >= maxAttempts {
             logger?.debug("Attempt failed. No remaining attempts.")
 #if canImport(OSLog)
             appleLogger?.debug("""
@@ -379,7 +379,7 @@ public func retry<ClockType, ReturnType>(
          var attemptsUsedToAchieveMinDelay = 0
          repeat {
             if let maxAttempts {
-               guard attempt + attemptsUsedToAchieveMinDelay + 1 < maxAttempts else {
+               guard attempt + attemptsUsedToAchieveMinDelay < maxAttempts else {
                   logger?.debug("Attempt failed. No remaining attempts after backing off normally to achieve the minimum delay.")
 #if canImport(OSLog)
                   appleLogger?.debug("""
